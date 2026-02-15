@@ -10,12 +10,32 @@ export const list = query({
       .order("desc")
       .collect();
 
-    return Promise.all(
+    const userModels = await Promise.all(
       items.map(async (item) => ({
         ...item,
         imageUrl: await ctx.storage.getUrl(item.storageId),
+        isDefault: false,
       })),
     );
+
+    // Prepend the default model from BODY_IMAGE_STORAGE_ID env var if set
+    const defaultStorageId = process.env.BODY_IMAGE_STORAGE_ID;
+    if (defaultStorageId) {
+      const defaultUrl = await ctx.storage.getUrl(defaultStorageId);
+      if (defaultUrl) {
+        userModels.unshift({
+          _id: "default" as any,
+          _creationTime: 0,
+          name: "Default",
+          storageId: defaultStorageId as any,
+          createdAt: 0,
+          imageUrl: defaultUrl,
+          isDefault: true,
+        });
+      }
+    }
+
+    return userModels;
   },
 });
 
