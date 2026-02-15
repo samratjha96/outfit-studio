@@ -1,25 +1,30 @@
+import Zoom from "react-medium-image-zoom";
+import "react-medium-image-zoom/dist/styles.css";
+
 interface OutfitPreviewProps {
-  hasApiKey: boolean;
   isGenerating: boolean;
   generationProgress: number;
   error: string | null;
   generatedImage: string | null;
+  modelImageUrl?: string | null;
   onClearGeneratedImage: () => void;
 }
 
 export function OutfitPreview({
-  hasApiKey,
   isGenerating,
   generationProgress,
   error,
   generatedImage,
+  modelImageUrl,
   onClearGeneratedImage,
 }: OutfitPreviewProps) {
+  const displayModelImage = modelImageUrl || "/assets/model.png";
+
   return (
     <div className="right-column">
       <div>
         {/* Show progress indicator when generating */}
-        {hasApiKey && isGenerating && (
+        {isGenerating && (
           <div
             className="progress-indicator segmented"
             style={{
@@ -55,7 +60,7 @@ export function OutfitPreview({
             }}
           >
             <img
-              src="/assets/model.png"
+              src={displayModelImage}
               alt="Model"
               style={{
                 width: "100%",
@@ -68,21 +73,14 @@ export function OutfitPreview({
           </div>
         )}
 
-        {!hasApiKey && (
-          <div className="api-key-message">
-            <p>⚠️ Google API key required</p>
-            <p>Please set VITE_GOOGLE_API_KEY in your .env file</p>
-          </div>
-        )}
-
-        {hasApiKey && error && !error.includes("composite") && (
+        {error && (
           <div className="error-message">
             <p>Error: {error}</p>
             <button onClick={onClearGeneratedImage}>Clear</button>
           </div>
         )}
 
-        {hasApiKey && generatedImage && !isGenerating && (
+        {generatedImage && !isGenerating && (
           <div
             className="field-border"
             style={{
@@ -96,19 +94,21 @@ export function OutfitPreview({
               zIndex: 10,
             }}
           >
-            <img
-              src={generatedImage}
-              alt="Generated Outfit"
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "contain",
-                imageRendering: "auto",
-                backgroundColor: "white",
-                mixBlendMode: "normal",
-                display: "block",
-              }}
-            />
+            <Zoom>
+              <img
+                src={generatedImage}
+                alt="Generated Outfit"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                  imageRendering: "auto",
+                  backgroundColor: "white",
+                  mixBlendMode: "normal",
+                  display: "block",
+                }}
+              />
+            </Zoom>
           </div>
         )}
       </div>

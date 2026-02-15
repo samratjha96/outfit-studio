@@ -4,6 +4,7 @@ interface UploadSectionProps {
   onToggleUploadMenu: () => void;
   onUploadTops: () => void;
   onUploadBottoms: () => void;
+  onUploadModels: () => void;
 }
 
 export function UploadSection({
@@ -12,6 +13,7 @@ export function UploadSection({
   onToggleUploadMenu,
   onUploadTops,
   onUploadBottoms,
+  onUploadModels,
 }: UploadSectionProps) {
   return (
     <div
@@ -91,6 +93,18 @@ export function UploadSection({
             }}
           >
             Upload Bottoms
+          </button>
+          <button
+            onClick={onUploadModels}
+            style={{
+              padding: "2px 4px",
+              fontSize: "10px",
+              background: "#c0c0c0",
+              border: "1px outset #c0c0c0",
+              cursor: "pointer",
+            }}
+          >
+            Upload Models
           </button>
         </div>
       )}

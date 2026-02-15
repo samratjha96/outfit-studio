@@ -2,29 +2,22 @@
   "name": "outfit98",
   "private": true,
   "version": "0.0.0",
-  "description": "A nostalgic Windows 98-style outfit selector desktop application",
+  "description": "A nostalgic Windows 98-style outfit selector web application",
   "author": "Outfit98 Team",
   "type": "module",
   "scripts": {
-    "dev:renderer": "vite",
-    "dev:electron": "wait-on tcp:5173 && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron .",
-    "dev": "concurrently -k \"npm:dev:*\"",
-    "build:renderer": "vite build",
-    "build:electron": "tsc -p tsconfig.json",
-    "build": "npm run build:renderer && npm run build:electron",
-    "start": "cross-env NODE_ENV=production electron .",
+    "dev": "vite",
+    "build": "vite build",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview",
-    "build-electron": "npm run build && electron-builder"
+    "preview": "vite preview"
   },
   "dependencies": {
-    "@google/genai": "^1.17.0",
-    "@google/generative-ai": "^0.24.1",
-    "@supabase/supabase-js": "^2.57.4",
-    "@types/node": "^24.3.1",
     "98.css": "^0.1.21",
+    "convex": "^1.31.7",
+    "openai": "^4.78.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "react-medium-image-zoom": "^5.4.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.66",
@@ -32,29 +25,11 @@
     "@typescript-eslint/eslint-plugin": "^7.2.0",
     "@typescript-eslint/parser": "^7.2.0",
     "@vitejs/plugin-react": "^4.2.1",
-    "concurrently": "^8.2.2",
-    "cross-env": "^7.0.3",
-    "electron": "^28.2.0",
-    "electron-builder": "^24.9.1",
     "eslint": "^8.57.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.6",
     "globals": "^16.3.0",
     "typescript": "^5.2.2",
-    "vite": "^5.2.0",
-    "wait-on": "^7.2.0"
-  },
-  "main": "electron/main.js",
-  "build": {
-    "appId": "com.outfit98.app",
-    "productName": "Outfit98",
-    "directories": {
-      "output": "dist"
-    },
-    "files": [
-      "dist/**/*",
-      "electron/**/*",
-      "package.json"
-    ]
+    "vite": "^5.2.0"
   }
 }

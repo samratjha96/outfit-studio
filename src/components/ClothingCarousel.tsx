@@ -1,4 +1,4 @@
-import { LocalClothingItem } from "../types";
+import { ClothingItem } from "../types";
 
 interface CarouselControls {
   index: number;
@@ -7,7 +7,7 @@ interface CarouselControls {
 }
 
 interface ClothingCarouselProps {
-  items: LocalClothingItem[];
+  items: ClothingItem[];
   carousel: CarouselControls;
   category: "tops" | "bottoms";
   onImageError: (imageUrl: string) => void;
@@ -38,10 +38,13 @@ export function ClothingCarousel({
         <div className="clothes-window">
           {items.length > 0 && items[carousel.index] ? (
             <img
-              src={items[carousel.index].imageUrl}
+              src={items[carousel.index].imageUrl ?? undefined}
               alt={items[carousel.index].name}
               className="clothing-item"
-              onError={() => onImageError(items[carousel.index].imageUrl)}
+              onError={() => {
+                const url = items[carousel.index].imageUrl;
+                if (url) onImageError(url);
+              }}
             />
           ) : (
             <div

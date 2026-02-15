@@ -1,312 +1,141 @@
-import { useState, useCallback, useEffect, useRef } from "react";
-import {
-  outfitGenerator,
-  OutfitGenerationResult,
-} from "../services/outfitGenerator";
-import { imageComposer } from "../services/imageComposer";
-import { rateLimiter } from "../services/rateLimiter";
-import type {
-  ClothingItem,
-  RateLimitResult,
-  UseOutfitGenerationReturn,
-} from "../types";
+import { useState, useCallback } from "react";
+import { useAction, useMutation, useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
+
+export interface UseOutfitGenerationReturn {
+  generatedImage: string | null;
+  isGenerating: boolean;
+  error: string | null;
+  generateOutfit: (
+    topItemId: Id<"clothingItems">,
+    bottomItemId: Id<"clothingItems">,
+    modelImageStorageId?: Id<"_storage">,
+  ) => Promise<void>;
+  generateNanoOutfit: (
+    occasion: string,
+    modelImageStorageId?: Id<"_storage">,
+  ) => Promise<void>;
+  generateOutfitTransfer: (
+    inspirationFile: File,
+    modelImageStorageId?: Id<"_storage">,
+  ) => Promise<void>;
+  clearGeneratedImage: () => void;
+}
 
 export function useOutfitGeneration(): UseOutfitGenerationReturn {
-  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
-  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [generationId, setGenerationId] =
+    useState<Id<"generations"> | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [apiRequired, setApiRequired] = useState<boolean>(false);
-  const [isComposite, setIsComposite] = useState<boolean>(false);
+  const [isStarting, setIsStarting] = useState(false);
 
-  const inFlightRef = useRef(false); // synchronous guard against rapid double-clicks
-  const cacheRef = useRef<Map<string, { url: string; isComposite: boolean }>>(
-    new Map()
+  // Real-time query for the current generation's status
+  const generation = useQuery(
+    api.generations.get,
+    generationId ? { id: generationId } : "skip",
   );
 
-  // Check API key availability
-  useEffect(() => {
-    const hasValidApiKey = Boolean(
-      import.meta.env.VITE_GOOGLE_API_KEY &&
-        import.meta.env.VITE_GOOGLE_API_KEY !== "your_google_api_key_here"
-    );
-    setApiRequired(!hasValidApiKey);
-  }, []);
+  const startOutfit = useAction(api.generations.startOutfit);
+  const startNano = useAction(api.generations.startNano);
+  const startTransfer = useAction(api.generations.startTransfer);
+  const generateUploadUrl = useMutation(api.clothingItems.generateUploadUrl);
 
-  const canGenerate = useCallback((): RateLimitResult => {
-    return rateLimiter.canMakeCall();
-  }, []);
+  const isGenerating =
+    isStarting ||
+    generation?.status === "pending" ||
+    generation?.status === "generating";
+
+  const generatedImage =
+    generation?.status === "completed" ? (generation.imageUrl ?? null) : null;
+
+  const generationError =
+    generation?.status === "failed" ? generation.errorMessage ?? null : null;
 
   const generateOutfit = useCallback(
-    async (top: ClothingItem, bottom: ClothingItem) => {
-      if (inFlightRef.current) {
-        console.warn(
-          "⏳ Generate already in flight. Ignoring duplicate click."
-        );
-        return;
-      }
-      inFlightRef.current = true;
-
-      // Use item IDs for cache key
-      const key = `outfit::${top.id}::${bottom.id}`;
-      if (cacheRef.current.has(key)) {
-        const cached = cacheRef.current.get(key)!;
-        console.log("♻️ Using cached result for", top.id, bottom.id);
-        setGeneratedImage(cached.url);
-        setIsComposite(cached.isComposite);
-        setError(null);
-        inFlightRef.current = false;
-        return;
-      }
-
-      // Check rate limit first
-      const rateLimitCheck = canGenerate();
-      if (!rateLimitCheck.allowed) {
-        console.warn("🚫 Rate limit exceeded:", rateLimitCheck.reason);
-        setError(rateLimitCheck.reason || "Rate limit exceeded");
-        setGeneratedImage(null);
-        setIsComposite(false);
-        inFlightRef.current = false;
-        return;
-      }
-
-      console.log("🤖 Starting outfit generation for:", top.id, bottom.id);
-      setIsGenerating(true);
+    async (
+      topItemId: Id<"clothingItems">,
+      bottomItemId: Id<"clothingItems">,
+      modelImageStorageId?: Id<"_storage">,
+    ) => {
       setError(null);
-      setIsComposite(false);
-
+      setIsStarting(true);
       try {
-        // Record the API call
-        rateLimiter.recordCall();
-        console.log(
-          "📊 API call recorded. Rate limit status:",
-          rateLimiter.getStatus()
-        );
-
-        // Try AI generation first
-        const result: OutfitGenerationResult =
-          await outfitGenerator.generateOutfit(top.imageUrl, bottom.imageUrl);
-
-        if (result.success && result.imageUrl) {
-          console.log("✨ AI-generated image created successfully");
-          setGeneratedImage(result.imageUrl);
-          setIsComposite(false);
-          cacheRef.current.set(key, {
-            url: result.imageUrl,
-            isComposite: false,
-          });
-        } else {
-          // Fallback to composite image
-          console.log("🎨 AI generation failed, using composite image");
-          const compositeResult = await imageComposer.createComposite(
-            top.imageUrl,
-            bottom.imageUrl
-          );
-
-          if (compositeResult.success && compositeResult.imageUrl) {
-            console.log("🎨 Composite image created successfully");
-            setGeneratedImage(compositeResult.imageUrl);
-            setIsComposite(true);
-            setError("Using composite image (AI generation unavailable)");
-            cacheRef.current.set(key, {
-              url: compositeResult.imageUrl,
-              isComposite: true,
-            });
-          } else {
-            throw new Error(
-              compositeResult.error || "Failed to create composite image"
-            );
-          }
-        }
+        const id = await startOutfit({ topItemId, bottomItemId, modelImageStorageId });
+        setGenerationId(id);
       } catch (err) {
-        console.error("❌ Failed to generate outfit:", err);
-        setError("Failed to generate outfit. Please try again.");
-        setGeneratedImage(null);
-        setIsComposite(false);
+        setError(
+          err instanceof Error ? err.message : "Failed to start generation",
+        );
       } finally {
-        setIsGenerating(false);
-        inFlightRef.current = false;
-        console.log("🏁 Outfit generation completed");
+        setIsStarting(false);
       }
     },
-    [canGenerate]
+    [startOutfit],
   );
 
   const generateNanoOutfit = useCallback(
-    async (occasion: string) => {
-      if (inFlightRef.current) {
-        console.warn(
-          "⏳ Generate already in flight. Ignoring duplicate click."
-        );
-        return;
-      }
-      inFlightRef.current = true;
-
-      // Use occasion for cache key
-      const key = `nano::${occasion}`;
-      if (cacheRef.current.has(key)) {
-        const cached = cacheRef.current.get(key)!;
-        console.log("♻️ Using cached nano result for", occasion);
-        setGeneratedImage(cached.url);
-        setIsComposite(false); // Nano outfits are always AI-generated
-        setError(null);
-        inFlightRef.current = false;
-        return;
-      }
-
-      // Check rate limit first
-      const rateLimitCheck = canGenerate();
-      if (!rateLimitCheck.allowed) {
-        console.warn("🚫 Rate limit exceeded:", rateLimitCheck.reason);
-        setError(rateLimitCheck.reason || "Rate limit exceeded");
-        setGeneratedImage(null);
-        setIsComposite(false);
-        inFlightRef.current = false;
-        return;
-      }
-
-      console.log("🍌 Starting nano outfit generation for:", occasion);
-      setIsGenerating(true);
+    async (occasion: string, modelImageStorageId?: Id<"_storage">) => {
       setError(null);
-      setIsComposite(false);
-
+      setIsStarting(true);
       try {
-        // Record the API call
-        rateLimiter.recordCall();
-        console.log(
-          "📊 API call recorded. Rate limit status:",
-          rateLimiter.getStatus()
-        );
-
-        // Call the nano outfit generator
-        const result: OutfitGenerationResult =
-          await outfitGenerator.generateNanoOutfit(occasion);
-
-        if (result.success && result.imageUrl) {
-          console.log("✨ Nano outfit generated successfully");
-          setGeneratedImage(result.imageUrl);
-          setIsComposite(false);
-          cacheRef.current.set(key, {
-            url: result.imageUrl,
-            isComposite: false,
-          });
-        } else {
-          throw new Error(result.error || "Failed to generate nano outfit");
-        }
+        const id = await startNano({ occasion, modelImageStorageId });
+        setGenerationId(id);
       } catch (err) {
-        console.error("❌ Failed to generate nano outfit:", err);
-        setError("Failed to generate nano outfit. Please try again.");
-        setGeneratedImage(null);
-        setIsComposite(false);
+        setError(
+          err instanceof Error ? err.message : "Failed to start generation",
+        );
       } finally {
-        setIsGenerating(false);
-        inFlightRef.current = false;
-        console.log("🏁 Nano outfit generation completed");
+        setIsStarting(false);
       }
     },
-    [canGenerate]
+    [startNano],
   );
 
   const generateOutfitTransfer = useCallback(
-    async (inspirationFile: File) => {
-      if (inFlightRef.current) {
-        console.warn(
-          "⏳ Generate already in flight. Ignoring duplicate click."
-        );
-        return;
-      }
-      inFlightRef.current = true;
-
-      // Create a temporary URL for the file
-      const inspirationUrl = URL.createObjectURL(inspirationFile);
-
-      // Use file name and size for cache key
-      const key = `transfer::${inspirationFile.name}::${inspirationFile.size}`;
-      if (cacheRef.current.has(key)) {
-        const cached = cacheRef.current.get(key)!;
-        console.log(
-          "♻️ Using cached transfer result for",
-          inspirationFile.name
-        );
-        setGeneratedImage(cached.url);
-        setIsComposite(false); // Transfer outfits are always AI-generated
-        setError(null);
-        inFlightRef.current = false;
-        URL.revokeObjectURL(inspirationUrl);
-        return;
-      }
-
-      // Check rate limit first
-      const rateLimitCheck = canGenerate();
-      if (!rateLimitCheck.allowed) {
-        console.warn("🚫 Rate limit exceeded:", rateLimitCheck.reason);
-        setError(rateLimitCheck.reason || "Rate limit exceeded");
-        setGeneratedImage(null);
-        setIsComposite(false);
-        inFlightRef.current = false;
-        URL.revokeObjectURL(inspirationUrl);
-        return;
-      }
-
-      console.log("🔄 Starting outfit transfer for:", inspirationFile.name);
-      setIsGenerating(true);
+    async (inspirationFile: File, modelImageStorageId?: Id<"_storage">) => {
       setError(null);
-      setIsComposite(false);
-
+      setIsStarting(true);
       try {
-        // Record the API call
-        rateLimiter.recordCall();
-        console.log(
-          "📊 API call recorded. Rate limit status:",
-          rateLimiter.getStatus()
-        );
-
-        // Call the outfit transfer generator
-        const result: OutfitGenerationResult =
-          await outfitGenerator.generateOutfitTransfer(inspirationUrl);
-
-        if (result.success && result.imageUrl) {
-          console.log("✨ Outfit transfer completed successfully");
-          setGeneratedImage(result.imageUrl);
-          setIsComposite(false);
-          cacheRef.current.set(key, {
-            url: result.imageUrl,
-            isComposite: false,
-          });
-        } else {
-          throw new Error(result.error || "Failed to transfer outfit");
+        // Upload the inspiration image to Convex storage first
+        const uploadUrl = await generateUploadUrl();
+        const uploadResponse = await fetch(uploadUrl, {
+          method: "POST",
+          headers: { "Content-Type": inspirationFile.type },
+          body: inspirationFile,
+        });
+        if (!uploadResponse.ok) {
+          throw new Error("Failed to upload inspiration image");
         }
+        const { storageId } = await uploadResponse.json();
+
+        const id = await startTransfer({
+          inspirationStorageId: storageId,
+          modelImageStorageId,
+        });
+        setGenerationId(id);
       } catch (err) {
-        console.error("❌ Failed to transfer outfit:", err);
-        setError("Failed to transfer outfit. Please try again.");
-        setGeneratedImage(null);
-        setIsComposite(false);
+        setError(
+          err instanceof Error ? err.message : "Failed to start generation",
+        );
       } finally {
-        setIsGenerating(false);
-        inFlightRef.current = false;
-        URL.revokeObjectURL(inspirationUrl);
-        console.log("🏁 Outfit transfer completed");
+        setIsStarting(false);
       }
     },
-    [canGenerate]
+    [startTransfer, generateUploadUrl],
   );
 
   const clearGeneratedImage = useCallback(() => {
-    console.log("🗑️ Clearing generated image");
-    setGeneratedImage(null);
-    setIsComposite(false);
+    setGenerationId(null);
     setError(null);
   }, []);
 
   return {
     generatedImage,
     isGenerating,
-    error,
-    apiRequired,
-    isComposite,
+    error: error || generationError,
     generateOutfit,
     generateNanoOutfit,
     generateOutfitTransfer,
     clearGeneratedImage,
-    canGenerate,
   };
 }

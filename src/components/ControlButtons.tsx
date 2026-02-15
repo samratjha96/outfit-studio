@@ -1,9 +1,5 @@
-import { RateLimitResult } from "../types";
-
 interface ControlButtonsProps {
-  hasApiKey: boolean;
-  canGenerateNow: boolean;
-  rateLimitStatus: RateLimitResult;
+  isGenerating: boolean;
   onRandom: () => void;
   onSelect: () => void;
   onNanoBananify: () => void;
@@ -11,9 +7,7 @@ interface ControlButtonsProps {
 }
 
 export function ControlButtons({
-  hasApiKey,
-  canGenerateNow,
-  rateLimitStatus,
+  isGenerating,
   onRandom,
   onSelect,
   onNanoBananify,
@@ -46,16 +40,14 @@ export function ControlButtons({
           Random
         </button>
         <button
-          className={`default ${!canGenerateNow ? "disabled" : ""}`}
+          className={`default ${isGenerating ? "disabled" : ""}`}
           onClick={onSelect}
           title={
-            !hasApiKey
-              ? "API key required"
-              : !rateLimitStatus.allowed
-              ? rateLimitStatus.reason || "Rate limited"
+            isGenerating
+              ? "Generation in progress..."
               : "Generate outfit preview"
           }
-          disabled={!canGenerateNow}
+          disabled={isGenerating}
           aria-label="Generate outfit preview"
           style={{
             padding: "8px 16px",
@@ -66,7 +58,6 @@ export function ControlButtons({
           Select
         </button>
       </div>
-
 
       {/* Second Row */}
       <div
