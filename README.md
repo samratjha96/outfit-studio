@@ -1,125 +1,102 @@
-# 👋 Hi there  
+# Outfit Studio
 
-I’m **Sarah** — [YouTube](https://www.youtube.com/@sarahliyt) | [Instagram](https://instagram.com/sarahli.mp3)
+AI-powered outfit styling app. Upload your wardrobe, pick tops and bottoms, and generate outfit previews on your own model image.
 
-**Outfit98** is a nostalgic Windows 98–style outfit picker. Try it, remix it, and enjoy the retro vibes.  
+## Features
 
----
+- **Outfit Generation** — Select a top + bottom, generate an AI preview of the outfit on your model
+- **Ideate with AI** — Describe an occasion and get AI-generated outfit suggestions
+- **Outfit Transfer** — Upload an inspiration image and transfer the outfit to your model
+- **User Accounts** — Google OAuth via Convex Auth, all data scoped per user
+- **Default Wardrobe** — New users get seeded with starter clothing items automatically
 
-## 🧠 What It Is  
+## Tech Stack
 
-A cozy Windows 98-inspired desktop app that lets you choose tops and bottoms, upload your own clothes, and see AI-generated outfit previews.  
+React, TypeScript, Vite, Convex (backend + auth + storage), NVIDIA API (Gemini image generation)
 
----
+## Quick Start
 
-## 🚀 Quick Start  
+### Prerequisites
 
-1. **Clone and install**
-   ```bash
-   git clone <your-fork-url> outfit98 && cd outfit98
-   npm install
+- Node.js 20+
+- A [Convex](https://convex.dev) account
+- Google OAuth credentials (Google Cloud Console)
+- NVIDIA API key from [inference.nvidia.com](https://inference.nvidia.com)
 
-2. **Add your .env file**
-```VITE_SUPABASE_URL=your_supabase_project_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-VITE_GOOGLE_API_KEY=your_google_api_key
+### Setup
+
+```bash
+git clone git@github.com:samratjha96/outfit-studio.git
+cd outfit-studio
+npm install
 ```
 
-3. **Run the app**
-```npm run dev```
-Your retro window should pop up! 
-Note: a electron popup might show up and not work so you can just open it in the browser. 
+### Configure Convex
 
----
-
-## 🧺 Supabase Setup (For Uploading Clothes)
-
-To upload your own tops and bottoms, set up Supabase in a few easy steps:
-
-### Step 1: Create a Project
-
-Go to https://supabase.com, sign in, and click New Project.
-Copy your Project URL and Anon Key — you’ll use them in your .env file.
-
-### Step 2: Enable Storage
-
-In your Supabase dashboard, go to Storage → Create bucket.
-Name it clothing-images and make sure it’s public.
-
-### Step 3 — Create a Table
-
-Go to SQL Editor → New Query and paste this:
-
-```
-create table if not exists clothing_items (
-  id bigint generated always as identity primary key,
-  name text,
-  category text check (category in ('tops','bottoms')),
-  image_url text not null,
-  created_at timestamp with time zone default now()
-);
-
-alter table clothing_items enable row level security;
-
-create policy "anon can read" on clothing_items
-for select using (true);
-
-create policy "anon can insert" on clothing_items
-for insert with check (true);
+```bash
+npx convex dev        # creates deployment, generates .env.local
+npx @convex-dev/auth  # generates JWT keys, sets them on Convex
 ```
 
-Then click Run.
+### Set Environment Variables
 
-### Step 4: Upload Your Clothes
+On your Convex deployment (via dashboard or CLI):
 
-Open the app, click the folder icon, then choose Upload Tops or Upload Bottoms.
-Your images will upload to Supabase and appear in the carousel automatically.
-
-If items don’t show, double-check that your bucket is public and the table policies are correct.
-
----
-
-### 🤖 AI Outfit Previews 
-
-Outfit98 uses the Google Generative AI API to create realistic outfit previews.
-This feature is required for the app to work properly.
-
-Important:
-
-You must have a Google Developer account and enable billing on your Google Cloud project.
-The API is not free — you’ll be charged per request.
-
-### Step 1: Get an API Key
-
-Go to Google AI Studio.
-Sign in with a Google Developer account.
-
-### Step 2: Enable Billing
-
-In your Google Cloud project, make sure billing is turned on.
-
-### Step 3: Add Your Key
-
-Copy your key into the .env file:
-```
-VITE_GOOGLE_API_KEY=your_google_api_key
+```bash
+npx convex env set AUTH_GOOGLE_ID <your-google-client-id>
+npx convex env set AUTH_GOOGLE_SECRET <your-google-client-secret>
+npx convex env set NVIDIA_API_KEY <your-nvidia-api-key>
+npx convex env set BODY_IMAGE_STORAGE_ID <storage-id>  # optional default model image
 ```
 
-### Step 4 — Restart the App
+Add the OAuth redirect URI in Google Cloud Console:
 
-Once you restart, AI outfit previews will automatically generate as you browse tops and bottoms.
+```
+https://<your-deployment>.convex.site/api/auth/callback/google
+```
 
----
+### Run
 
-### 🧩 Built With
+```bash
+npx convex dev   # watches and deploys Convex functions
+npm run dev      # starts Vite dev server
+```
 
-Electron · React · TypeScript · Vite · 98.css · Supabase · Google Gemini API
+Open http://localhost:5173, sign in with Google, and start styling.
 
----
+## Docker
 
-###  🎬 Watch the Build
+```bash
+# Set VITE_CONVEX_URL in .env, then:
+docker compose up --build
+```
 
-Watch on YouTube
+Serves on port 8318 by default. Override with `HOST_PORT` in `.env`.
 
-Follow for more cozy coding projects → @sarahli.mp3
+Note: Convex functions run in the cloud. Deploy them first with `npx convex deploy`.
 
+## Project Structure
+
+```
+src/
+  App.tsx                    # Main app with auth wrappers
+  main.tsx                   # ConvexAuthProvider setup
+  hooks/
+    useSeedDefaults.ts       # Two-phase default clothing seeding
+    useCarousel.ts           # Carousel navigation
+    useOutfitGeneration.ts   # Generation state management
+  components/                # UI components
+convex/
+  schema.ts                  # DB schema with auth tables
+  auth.ts                    # Google OAuth provider
+  clothingItems.ts           # User-scoped clothing CRUD
+  modelImages.ts             # User-scoped model images
+  generations.ts             # Generation queries/actions
+  generationWorker.ts        # Image generation pipeline
+  imageProvider.ts           # NVIDIA/Gemini API integration
+  seed.ts                    # Default clothing seeding
+```
+
+## License
+
+MIT
