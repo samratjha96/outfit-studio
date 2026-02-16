@@ -5,9 +5,14 @@ export interface ReferenceImage {
   mimeType: string;
 }
 
+export interface LabeledImage {
+  label: string;
+  image: ReferenceImage;
+}
+
 export interface GenerationInput {
   prompt: string;
-  referenceImages?: ReferenceImage[];
+  labeledImages?: LabeledImage[];
 }
 
 export type GenerationOutput =
@@ -30,15 +35,15 @@ export interface ImageProvider {
 // Prompt builders for the three generation modes
 
 export function buildOutfitCombinePrompt(): string {
-  return "Create a new image by combining the elements from the provided images. Take the top clothing item from image 1 and the bottom clothing item from image 2, and place them naturally onto the body in image 3 so it looks like the person is wearing the selected outfit. Fit to body shape and pose, preserve garment proportions and textures, match lighting and shadows, handle occlusion by hair and arms. CRITICAL: The background must be completely white (#FFFFFF) - do not use black, transparent, or any other background color. Replace any existing background with solid white. Do not change the person identity or add accessories.";
+  return "Dress the person in the labeled top and bottom clothing items shown above. Use EXACTLY those garments — same color, pattern, fabric, and style. Fit them to the person's body shape and pose. Preserve garment proportions and textures, match lighting and shadows, handle occlusion by hair and arms. CRITICAL: The background must be completely white (#FFFFFF). Do not change the person's identity or add accessories.";
 }
 
 export function buildNanoPrompt(occasion: string): string {
-  return `Using the provided image of a model, please add an outfit to the model that would work in this occasion: ${occasion}. Ensure the outfit integrates naturally with the model's body shape, pose, and lighting. Keep the background plain white so the focus stays on the model and the outfit.`;
+  return `Using the person shown above, dress them in an outfit appropriate for: ${occasion}. Ensure the outfit integrates naturally with their body shape, pose, and lighting. Keep the background plain white.`;
 }
 
 export function buildTransferPrompt(): string {
-  return "Using the provided images, place the outfit from image 2 onto the person in image 1. Keep the face, body shape, and background of image 1 completely unchanged. Ensure the outfit integrates naturally with the model's body shape, pose, and lighting. CRITICAL: The background must be completely white (#FFFFFF) - do not use black, transparent, or any other background color. Do not change the person identity or add accessories.";
+  return "Dress the person in the exact outfit shown in the inspiration image above. Recreate the outfit faithfully — same garments, colors, and style. Keep the person's face, body shape, and pose unchanged. CRITICAL: The background must be completely white (#FFFFFF). Do not change the person's identity or add accessories.";
 }
 
 // Base64 utilities for Convex server-side (no btoa/atob available)
@@ -143,22 +148,23 @@ const nvidiaProvider: ImageProvider = {
       baseURL: NVIDIA_API_URL,
     });
 
-    const hasReferenceImages =
-      input.referenceImages && input.referenceImages.length > 0;
+    const hasImages =
+      input.labeledImages && input.labeledImages.length > 0;
 
     try {
       let response: OpenAI.ChatCompletion;
 
-      if (hasReferenceImages && input.referenceImages) {
+      if (hasImages && input.labeledImages) {
         const content: OpenAI.ChatCompletionContentPart[] = [];
 
-        // Add all reference images first
-        for (const img of input.referenceImages) {
-          const dataUri = arrayBufferToDataUri(img.data, img.mimeType);
+        // Interleave labels with images so the model knows what each one is
+        for (const { label, image } of input.labeledImages) {
+          content.push({ type: "text", text: label });
+          const dataUri = arrayBufferToDataUri(image.data, image.mimeType);
           content.push({ type: "image_url", image_url: { url: dataUri } });
         }
 
-        // Add the text prompt
+        // Add the instruction prompt last
         content.push({ type: "text", text: input.prompt });
 
         response = await client.chat.completions.create({

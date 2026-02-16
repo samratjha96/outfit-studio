@@ -47,32 +47,16 @@ export function OutfitTransferWindow({
   };
 
   return (
-    <div
-      className="window"
-      style={{
-        position: "fixed",
-        top: "50%",
-        left: "50%",
-        transform: "translate(-50%, -50%)",
-        width: "400px",
-        height: "auto",
-        maxHeight: "500px",
-        zIndex: 2000,
-      }}
-    >
-      <div className="title-bar">
-        <div className="title-bar-text">Outfit Transfer</div>
-        <div className="title-bar-controls">
-          <button aria-label="Minimize"></button>
-          <button aria-label="Maximize"></button>
-          <button aria-label="Close" onClick={handleClose}></button>
-        </div>
-      </div>
-      <div className="window-body" style={{ padding: "8px", height: "auto" }}>
-        <p style={{ margin: "0 0 8px 0" }}>
+    <div className="modal-overlay" onClick={handleClose}>
+      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+        <button className="modal-close" onClick={handleClose}>
+          &times;
+        </button>
+        <h2 className="modal-title">Outfit Transfer</h2>
+        <p className="modal-body">
           Upload an inspiration image to transfer its outfit onto the model
         </p>
-        
+
         <input
           ref={fileInputRef}
           type="file"
@@ -82,60 +66,30 @@ export function OutfitTransferWindow({
         />
 
         {!uploadedImage ? (
-          <div style={{ textAlign: "center" }}>
-            <button
-              className="default"
-              onClick={handleUploadClick}
-              style={{
-                marginTop: "10px",
-                padding: "4px 8px",
-                fontSize: "12px",
-                width: "120px",
-                minWidth: "auto",
-              }}
-            >
+          <div className="modal-actions">
+            <button className="btn-secondary" onClick={handleUploadClick}>
               Select Image
             </button>
           </div>
         ) : (
           <div style={{ textAlign: "center" }}>
             {previewUrl && (
-              <div style={{ marginBottom: "10px" }}>
+              <div style={{ marginBottom: 16 }}>
                 <img
                   src={previewUrl}
                   alt="Preview"
-                  style={{
-                    maxWidth: "200px",
-                    maxHeight: "200px",
-                    border: "1px solid #ccc",
-                  }}
+                  className="modal-preview-img"
                 />
-                <p style={{ fontSize: "11px", margin: "4px 0" }}>
+                <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 8 }}>
                   {uploadedImage.name}
                 </p>
               </div>
             )}
-            <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
-              <button
-                className="default"
-                onClick={handleUploadClick}
-                style={{
-                  padding: "4px 8px",
-                  fontSize: "12px",
-                  width: "80px",
-                }}
-              >
+            <div className="modal-actions">
+              <button className="btn-secondary" onClick={handleUploadClick}>
                 Change
               </button>
-              <button
-                className="default"
-                onClick={handleTransferClick}
-                style={{
-                  padding: "4px 8px",
-                  fontSize: "12px",
-                  width: "80px",
-                }}
-              >
+              <button className="btn-primary" onClick={handleTransferClick}>
                 Transfer
               </button>
             </div>

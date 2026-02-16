@@ -22,93 +22,38 @@ export function OutfitPreview({
 
   return (
     <div className="right-column">
-      <div>
-        {/* Show progress indicator when generating */}
-        {isGenerating && (
-          <div
-            className="progress-indicator segmented"
-            style={{
-              position: "absolute",
-              top: "45%",
-              left: "70%",
-              transform: "translate(-50%, -50%)",
-              width: "240px",
-              height: "20px",
-              zIndex: 10,
-            }}
-          >
-            <span
-              className="progress-indicator-bar"
-              style={{ width: `${generationProgress}%` }}
-            />
-          </div>
-        )}
-
-        {/* Show model image when not generating */}
-        {!isGenerating && (
-          <div
-            className="field-border"
-            style={{
-              position: "absolute",
-              top: "45%",
-              left: "70%",
-              transform: "translate(-50%, -50%)",
-              padding: "8px",
-              width: "240px",
-              height: "480px",
-              zIndex: 5,
-            }}
-          >
-            <img
-              src={displayModelImage}
-              alt="Model"
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "contain",
-                imageRendering: "auto",
-                display: "block",
-              }}
-            />
-          </div>
-        )}
-
-        {error && (
-          <div className="error-message">
-            <p>Error: {error}</p>
-            <button onClick={onClearGeneratedImage}>Clear</button>
-          </div>
-        )}
-
-        {generatedImage && !isGenerating && (
-          <div
-            className="field-border"
-            style={{
-              position: "absolute",
-              top: "45%",
-              left: "70%",
-              transform: "translate(-50%, -50%)",
-              padding: "8px",
-              width: "240px",
-              height: "480px",
-              zIndex: 10,
-            }}
-          >
+      <div className="preview-card">
+        <div className="preview-image-container">
+          {generatedImage && !isGenerating ? (
             <Zoom>
               <img
                 src={generatedImage}
                 alt="Generated Outfit"
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "contain",
-                  imageRendering: "auto",
-                  backgroundColor: "white",
-                  mixBlendMode: "normal",
-                  display: "block",
-                }}
               />
             </Zoom>
+          ) : (
+            <img
+              src={displayModelImage}
+              alt="Model"
+            />
+          )}
+        </div>
+
+        {error && (
+          <div className="error-message">
+            <p>Error: {error}</p>
+            <button className="btn-secondary" onClick={onClearGeneratedImage}>
+              Clear
+            </button>
+          </div>
+        )}
+
+        {isGenerating && (
+          <div className="preview-progress">
+            <div
+              className="preview-progress-bar"
+              style={{ width: `${generationProgress}%` }}
+            />
           </div>
         )}
       </div>

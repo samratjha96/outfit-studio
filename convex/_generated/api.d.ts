@@ -8,11 +8,14 @@
  * @module
  */
 
+import type * as auth from "../auth.js";
 import type * as clothingItems from "../clothingItems.js";
 import type * as generationWorker from "../generationWorker.js";
 import type * as generations from "../generations.js";
+import type * as http from "../http.js";
 import type * as imageProvider from "../imageProvider.js";
 import type * as modelImages from "../modelImages.js";
+import type * as seed from "../seed.js";
 
 import type {
   ApiFromModules,
@@ -21,11 +24,14 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  auth: typeof auth;
   clothingItems: typeof clothingItems;
   generationWorker: typeof generationWorker;
   generations: typeof generations;
+  http: typeof http;
   imageProvider: typeof imageProvider;
   modelImages: typeof modelImages;
+  seed: typeof seed;
 }>;
 
 /**

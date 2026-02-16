@@ -1,19 +1,34 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { authTables } from "@convex-dev/auth/server";
 
 export default defineSchema({
+  ...authTables,
+
+  defaultClothing: defineTable({
+    name: v.string(),
+    category: v.union(v.literal("tops"), v.literal("bottoms")),
+    storageId: v.id("_storage"),
+  }),
+
   clothingItems: defineTable({
     name: v.string(),
     category: v.union(v.literal("tops"), v.literal("bottoms")),
     storageId: v.id("_storage"),
+    userId: v.id("users"),
     createdAt: v.number(),
-  }).index("by_category", ["category", "createdAt"]),
+  })
+    .index("by_category", ["category", "createdAt"])
+    .index("by_user", ["userId", "category", "createdAt"]),
 
   modelImages: defineTable({
     name: v.string(),
     storageId: v.id("_storage"),
+    userId: v.id("users"),
     createdAt: v.number(),
-  }).index("by_created", ["createdAt"]),
+  })
+    .index("by_created", ["createdAt"])
+    .index("by_user", ["userId", "createdAt"]),
 
   generations: defineTable({
     type: v.union(
@@ -28,21 +43,19 @@ export default defineSchema({
       v.literal("failed"),
     ),
     prompt: v.string(),
-    // For outfit mode: references to top/bottom clothing items
     topItemId: v.optional(v.id("clothingItems")),
     bottomItemId: v.optional(v.id("clothingItems")),
-    // For transfer mode: uploaded inspiration image
     inspirationImageId: v.optional(v.id("_storage")),
-    // Custom model/body image (falls back to BODY_IMAGE_STORAGE_ID env var)
     modelImageId: v.optional(v.id("_storage")),
-    // Output
     storageId: v.optional(v.id("_storage")),
     provider: v.optional(v.string()),
     model: v.optional(v.string()),
     errorMessage: v.optional(v.string()),
+    userId: v.id("users"),
     createdAt: v.number(),
     completedAt: v.optional(v.number()),
   })
     .index("by_status", ["status"])
-    .index("by_created", ["createdAt"]),
+    .index("by_created", ["createdAt"])
+    .index("by_user", ["userId", "createdAt"]),
 });

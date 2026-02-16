@@ -5,6 +5,7 @@ export interface ClothingItem {
   imageUrl: string | null;
   category: "tops" | "bottoms";
   storageId: string;
+  userId: string;
   createdAt: number;
 }
 
@@ -13,6 +14,7 @@ export interface ModelImage {
   name: string;
   imageUrl: string | null;
   storageId: string;
+  userId: string;
   createdAt: number;
 }
 

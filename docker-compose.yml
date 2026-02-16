@@ -1,0 +1,43 @@
+# Docker Compose for Outfit Studio
+# One-command setup: docker compose up --build
+#
+# Prerequisites:
+#   1. Deploy Convex functions: npx convex deploy
+#   2. Copy .env.example to .env and set VITE_CONVEX_URL
+#   3. Run: docker compose up --build
+#
+# Note: Convex functions run in the cloud,
+#       this container only serves the frontend.
+
+services:
+  outfit-studio:
+    container_name: outfit-studio
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - VITE_CONVEX_URL=${VITE_CONVEX_URL}
+    ports:
+      - "${HOST_PORT:-8318}:3000"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+    restart: unless-stopped
+
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 128M

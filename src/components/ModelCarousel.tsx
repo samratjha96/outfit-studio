@@ -22,95 +22,56 @@ export function ModelCarousel({
   const currentItem = items[carousel.index];
 
   return (
-    <fieldset style={{ padding: "2px 8px 4px", margin: 0 }}>
-      <legend>Model</legend>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "6px",
-        }}
-      >
+    <div>
+      <span className="caption">MODEL</span>
+      <div className="model-carousel">
         <button
-          className="nav-button"
+          className="arrow-btn"
           onClick={carousel.prev}
           disabled={items.length <= 1}
-          style={{ width: "24px", height: "24px", minWidth: "24px", minHeight: "24px" }}
           aria-label="Previous model"
         >
-          ◀
+          &#8249;
         </button>
 
-        <div
-          className="field-border"
-          style={{
-            width: "48px",
-            height: "48px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-            padding: "1px",
-          }}
-        >
+        <div className="model-thumb">
           {currentItem ? (
             <img
               src={currentItem.imageUrl ?? undefined}
               alt={currentItem.name}
-              style={{
-                maxWidth: "44px",
-                maxHeight: "44px",
-                objectFit: "contain",
-              }}
               onError={() => {
                 const url = currentItem.imageUrl;
                 if (url) onImageError(url);
               }}
             />
           ) : (
-            <span style={{ fontSize: "9px", color: "#666", textAlign: "center" }}>
+            <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
               None
             </span>
           )}
         </div>
 
         <button
-          className="nav-button"
+          className="arrow-btn"
           onClick={carousel.next}
           disabled={items.length <= 1}
-          style={{ width: "24px", height: "24px", minWidth: "24px", minHeight: "24px" }}
           aria-label="Next model"
         >
-          ▶
+          &#8250;
         </button>
 
-        <span style={{
-          fontSize: "11px",
-          fontWeight: "bold",
-          flex: 1,
-          minWidth: 0,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-        }}>
-          {currentItem ? currentItem.name : "None"}
+        <span className="model-name">
+          {currentItem ? currentItem.name : "No model"}
         </span>
 
         <button
+          className="model-upload-link"
           onClick={onUpload}
-          style={{
-            padding: "2px 6px",
-            fontSize: "11px",
-            background: "#c0c0c0",
-            border: "2px outset #c0c0c0",
-            cursor: "pointer",
-            whiteSpace: "nowrap",
-          }}
           title="Upload model image"
         >
-          Upload...
+          Upload
         </button>
       </div>
-    </fieldset>
+    </div>
   );
 }

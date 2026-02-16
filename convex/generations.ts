@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { action, internalMutation, internalQuery, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
+import { getAuthUserId } from "@convex-dev/auth/server";
 import {
   buildOutfitCombinePrompt,
   buildNanoPrompt,
@@ -21,6 +22,7 @@ export const create = internalMutation({
     bottomItemId: v.optional(v.id("clothingItems")),
     inspirationImageId: v.optional(v.id("_storage")),
     modelImageId: v.optional(v.id("_storage")),
+    userId: v.id("users"),
   },
   handler: async (ctx, args) => {
     return ctx.db.insert("generations", {
@@ -31,6 +33,7 @@ export const create = internalMutation({
       bottomItemId: args.bottomItemId,
       inspirationImageId: args.inspirationImageId,
       modelImageId: args.modelImageId,
+      userId: args.userId,
       createdAt: Date.now(),
     });
   },
@@ -70,8 +73,12 @@ export const getInternal = internalQuery({
 export const get = query({
   args: { id: v.id("generations") },
   handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+
     const generation = await ctx.db.get(args.id);
     if (!generation) return null;
+    if (generation.userId !== userId) return null;
 
     return {
       ...generation,
@@ -86,9 +93,12 @@ export const get = query({
 export const getLatest = query({
   args: {},
   handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+
     const generation = await ctx.db
       .query("generations")
-      .withIndex("by_created")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
       .order("desc")
       .first();
 
@@ -111,6 +121,9 @@ export const startOutfit = action({
     modelImageStorageId: v.optional(v.id("_storage")),
   },
   handler: async (ctx, args): Promise<Id<"generations">> => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
     const prompt = buildOutfitCombinePrompt();
 
     const generationId: Id<"generations"> = await ctx.runMutation(
@@ -121,6 +134,7 @@ export const startOutfit = action({
         topItemId: args.topItemId,
         bottomItemId: args.bottomItemId,
         modelImageId: args.modelImageStorageId,
+        userId,
       },
     );
 
@@ -139,6 +153,9 @@ export const startNano = action({
     modelImageStorageId: v.optional(v.id("_storage")),
   },
   handler: async (ctx, args): Promise<Id<"generations">> => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
     const prompt = buildNanoPrompt(args.occasion);
 
     const generationId: Id<"generations"> = await ctx.runMutation(
@@ -147,6 +164,7 @@ export const startNano = action({
         type: "nano",
         prompt,
         modelImageId: args.modelImageStorageId,
+        userId,
       },
     );
 
@@ -165,6 +183,9 @@ export const startTransfer = action({
     modelImageStorageId: v.optional(v.id("_storage")),
   },
   handler: async (ctx, args): Promise<Id<"generations">> => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
     const prompt = buildTransferPrompt();
 
     const generationId: Id<"generations"> = await ctx.runMutation(
@@ -174,6 +195,7 @@ export const startTransfer = action({
         prompt,
         inspirationImageId: args.inspirationStorageId,
         modelImageId: args.modelImageStorageId,
+        userId,
       },
     );
 

@@ -11,6 +11,7 @@ interface ClothingCarouselProps {
   carousel: CarouselControls;
   category: "tops" | "bottoms";
   onImageError: (imageUrl: string) => void;
+  onUpload: () => void;
 }
 
 export function ClothingCarousel({
@@ -18,59 +19,51 @@ export function ClothingCarousel({
   carousel,
   category,
   onImageError,
+  onUpload,
 }: ClothingCarouselProps) {
-  const isTops = category === "tops";
-  const sectionClass = isTops
-    ? "section-container"
-    : "section-container bottoms-section";
-  const emptyMessage = isTops ? "No tops available" : "No bottoms available";
+  const label = category === "tops" ? "TOPS" : "BOTTOMS";
 
   return (
-    <div className={sectionClass}>
-      <div className="nav-buttons">
+    <div className="clothing-card">
+      <div className="clothing-header">
+        <span className="caption">{label}</span>
+        <button className="clothing-add-link" onClick={onUpload}>
+          + Add
+        </button>
+      </div>
+      <div className="clothing-viewport">
+        {items.length > 0 && items[carousel.index] ? (
+          <img
+            src={items[carousel.index].imageUrl ?? undefined}
+            alt={items[carousel.index].name}
+            onError={() => {
+              const url = items[carousel.index].imageUrl;
+              if (url) onImageError(url);
+            }}
+          />
+        ) : (
+          <span className="clothing-empty">
+            No {category} yet
+          </span>
+        )}
+      </div>
+      <div className="clothing-nav">
         <button
-          className="nav-button left-button"
+          className="arrow-btn"
           onClick={carousel.prev}
-          title={`Previous ${category.slice(0, -1)}`}
+          disabled={items.length === 0}
           aria-label={`Previous ${category.slice(0, -1)}`}
-          disabled={items.length === 0}
-        />
-        <div className="clothes-window">
-          {items.length > 0 && items[carousel.index] ? (
-            <img
-              src={items[carousel.index].imageUrl ?? undefined}
-              alt={items[carousel.index].name}
-              className="clothing-item"
-              onError={() => {
-                const url = items[carousel.index].imageUrl;
-                if (url) onImageError(url);
-              }}
-            />
-          ) : (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                height: "100%",
-                color: "#666",
-                fontSize: "14px",
-                textAlign: "center",
-              }}
-            >
-              {emptyMessage}
-              <br />
-              Click folder to upload
-            </div>
-          )}
-        </div>
+        >
+          &#8249;
+        </button>
         <button
-          className="nav-button right-button"
+          className="arrow-btn"
           onClick={carousel.next}
-          title={`Next ${category.slice(0, -1)}`}
-          aria-label={`Next ${category.slice(0, -1)}`}
           disabled={items.length === 0}
-        />
+          aria-label={`Next ${category.slice(0, -1)}`}
+        >
+          &#8250;
+        </button>
       </div>
     </div>
   );

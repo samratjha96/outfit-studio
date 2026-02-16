@@ -42,7 +42,7 @@ export const run = internalAction({
     });
 
     try {
-      const referenceImages: Array<{ data: ArrayBuffer; mimeType: string }> =
+      const labeledImages: Array<{ label: string; image: { data: ArrayBuffer; mimeType: string } }> =
         [];
 
       // Use the model image from the generation record, or fall back to env var
@@ -55,49 +55,48 @@ export const run = internalAction({
       }
 
       if (generation.type === "outfit") {
-        // Outfit combine mode: top image + bottom image + body image
-        const imageIds: string[] = [];
+        // Outfit combine mode: top + bottom + person
         if (generation.topItemId) {
           const topItem = await ctx.runQuery(
             internal.clothingItems.getInternal,
             { id: generation.topItemId },
           );
-          if (topItem) imageIds.push(topItem.storageId);
+          if (topItem) {
+            const [img] = await fetchImages(ctx, [topItem.storageId]);
+            if (img) labeledImages.push({ label: "TOP CLOTHING ITEM:", image: img });
+          }
         }
         if (generation.bottomItemId) {
           const bottomItem = await ctx.runQuery(
             internal.clothingItems.getInternal,
             { id: generation.bottomItemId },
           );
-          if (bottomItem) imageIds.push(bottomItem.storageId);
+          if (bottomItem) {
+            const [img] = await fetchImages(ctx, [bottomItem.storageId]);
+            if (img) labeledImages.push({ label: "BOTTOM CLOTHING ITEM:", image: img });
+          }
         }
 
-        const clothingImages = await fetchImages(ctx, imageIds);
-        referenceImages.push(...clothingImages);
-
-        // Add body model image from Convex storage
-        const bodyImages = await fetchImages(ctx, [bodyImageStorageId]);
-        referenceImages.push(...bodyImages);
+        const [bodyImg] = await fetchImages(ctx, [bodyImageStorageId]);
+        if (bodyImg) labeledImages.push({ label: "PERSON TO DRESS:", image: bodyImg });
       } else if (generation.type === "nano") {
-        // Nano mode: just the body model image
-        const bodyImages = await fetchImages(ctx, [bodyImageStorageId]);
-        referenceImages.push(...bodyImages);
+        // Nano mode: just the person
+        const [bodyImg] = await fetchImages(ctx, [bodyImageStorageId]);
+        if (bodyImg) labeledImages.push({ label: "PERSON TO DRESS:", image: bodyImg });
       } else if (generation.type === "transfer") {
-        // Transfer mode: body image + inspiration image
-        const bodyImages = await fetchImages(ctx, [bodyImageStorageId]);
-        referenceImages.push(...bodyImages);
+        // Transfer mode: person + inspiration outfit
+        const [bodyImg] = await fetchImages(ctx, [bodyImageStorageId]);
+        if (bodyImg) labeledImages.push({ label: "PERSON TO DRESS:", image: bodyImg });
 
         if (generation.inspirationImageId) {
-          const inspirationImages = await fetchImages(ctx, [
-            generation.inspirationImageId,
-          ]);
-          referenceImages.push(...inspirationImages);
+          const [inspoImg] = await fetchImages(ctx, [generation.inspirationImageId]);
+          if (inspoImg) labeledImages.push({ label: "INSPIRATION OUTFIT:", image: inspoImg });
         }
       }
 
       const result = await provider.generate({
         prompt: generation.prompt,
-        referenceImages,
+        labeledImages,
       });
 
       if (!result.success) {

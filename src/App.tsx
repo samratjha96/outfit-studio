@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
-import "98.css/dist/98.css";
-import { useQuery, useMutation } from "convex/react";
+import { Authenticated, Unauthenticated, AuthLoading, useQuery, useMutation } from "convex/react";
+import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "../convex/_generated/api";
 import { useCarousel } from "./hooks/useCarousel";
 import { useOutfitGeneration } from "./hooks/useOutfitGeneration";
+import { useSeedDefaults } from "./hooks/useSeedDefaults";
 import type { ClothingItem, ModelImage } from "./types";
 
 // Import components
@@ -16,7 +17,27 @@ import { OutfitPreview } from "./components/OutfitPreview";
 import { NanoWindow } from "./components/NanoWindow";
 import { OutfitTransferWindow } from "./components/OutfitTransferWindow";
 
-function App() {
+function SignIn() {
+  const { signIn } = useAuthActions();
+  return (
+    <div className="sign-in-container">
+      <div className="sign-in-window">
+        <div className="sign-in-title-bar">
+          <span>Welcome to Outfit Studio</span>
+        </div>
+        <div className="sign-in-body">
+          <p>Sign in to get started</p>
+          <button className="sign-in-btn" onClick={() => signIn("google")}>
+            Sign in with Google
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AuthenticatedApp() {
+  const { signOut } = useAuthActions();
   const [previewTop, setPreviewTop] = useState<number>(0);
   const [previewBottom, setPreviewBottom] = useState<number>(0);
   const [isUploading, setIsUploading] = useState<boolean>(false);
@@ -33,6 +54,9 @@ function App() {
     category: "bottoms",
   });
   const modelImagesQuery = useQuery(api.modelImages.list);
+
+  // Seed default clothing items on first sign-in if DB is empty
+  useSeedDefaults();
 
   const topsList: ClothingItem[] = (topsQuery ?? []) as ClothingItem[];
   const bottomsList: ClothingItem[] = (bottomsQuery ?? []) as ClothingItem[];
@@ -108,7 +132,6 @@ function App() {
                 storageId,
               });
             }
-            // No need to manually update state — Convex query auto-updates
           } catch (error) {
             console.error(`Error uploading ${category}:`, error);
             alert(`Failed to upload some ${category}. Please try again.`);
@@ -266,85 +289,70 @@ function App() {
   );
 
   return (
-    <div
-      className="window"
-      style={{ width: "100vw", height: "100vh", margin: 0 }}
-    >
-      <div className="title-bar">
-        <div className="title-bar-text">What should I wear today?</div>
-        <div className="title-bar-controls">
-          <button aria-label="Minimize"></button>
-          <button aria-label="Maximize"></button>
-          <button aria-label="Close"></button>
-        </div>
-      </div>
-      <div
-        className="window-body"
-        style={{
-          padding: 0,
-          height: "calc(100vh - 36px)",
-          background: "#c0c0c0",
-        }}
-      >
+    <div className="app-shell">
+      <header className="app-header">
         <MenuBar />
-        <div
-          className="main-container"
-          style={{ width: "100%", height: "calc(100% - 32px)" }}
-        >
-          {/* Left Column - Selection Area */}
-          <div className="left-column">
-            <UploadSection
-              isUploading={isUploading}
-              showUploadMenu={showUploadMenu}
-              onToggleUploadMenu={() => setShowUploadMenu(!showUploadMenu)}
-              onUploadTops={() => handleFileUpload("tops")}
-              onUploadBottoms={() => handleFileUpload("bottoms")}
-              onUploadModels={handleModelUpload}
-            />
+        <div className="header-actions">
+          <UploadSection
+            isUploading={isUploading}
+            showUploadMenu={showUploadMenu}
+            onToggleUploadMenu={() => setShowUploadMenu(!showUploadMenu)}
+            onUploadTops={() => handleFileUpload("tops")}
+            onUploadBottoms={() => handleFileUpload("bottoms")}
+            onUploadModels={handleModelUpload}
+          />
+          <button className="sign-out-btn" onClick={() => signOut()}>
+            Sign Out
+          </button>
+        </div>
+      </header>
 
-            <ModelCarousel
-              items={modelImagesList}
-              carousel={modelsCarousel}
-              onUpload={handleModelUpload}
-              onImageError={handleImageError}
-            />
+      <div className="main-container">
+        <div className="left-column">
+          <ModelCarousel
+            items={modelImagesList}
+            carousel={modelsCarousel}
+            onUpload={handleModelUpload}
+            onImageError={handleImageError}
+          />
 
-            <ClothingCarousel
-              items={topsList}
-              carousel={topsCarousel}
-              category="tops"
-              onImageError={handleImageError}
-            />
+          <ClothingCarousel
+            items={topsList}
+            carousel={topsCarousel}
+            category="tops"
+            onImageError={handleImageError}
+            onUpload={() => handleFileUpload("tops")}
+          />
 
-            <ClothingCarousel
-              items={bottomsList}
-              carousel={bottomsCarousel}
-              category="bottoms"
-              onImageError={handleImageError}
-            />
+          <ClothingCarousel
+            items={bottomsList}
+            carousel={bottomsCarousel}
+            category="bottoms"
+            onImageError={handleImageError}
+            onUpload={() => handleFileUpload("bottoms")}
+          />
 
-            <ControlButtons
-              isGenerating={isGenerating}
-              onRandom={handleRandom}
-              onSelect={handleSelect}
-              onNanoBananify={() => setShowNanoWindow(true)}
-              onOutfitTransfer={() => setShowOutfitTransferWindow(true)}
-            />
-          </div>
-
-          <OutfitPreview
+          <ControlButtons
             isGenerating={isGenerating}
-            generationProgress={generationProgress}
-            error={error}
-            generatedImage={generatedImage}
-            modelImageUrl={
-              modelImagesList.length > 0 && modelImagesList[modelsCarousel.index]
-                ? modelImagesList[modelsCarousel.index].imageUrl
-                : null
-            }
-            onClearGeneratedImage={clearGeneratedImage}
+            onRandom={handleRandom}
+            onSelect={handleSelect}
+            onNanoBananify={() => setShowNanoWindow(true)}
+            onOutfitTransfer={() => setShowOutfitTransferWindow(true)}
           />
         </div>
+
+        <OutfitPreview
+          isGenerating={isGenerating}
+          generationProgress={generationProgress}
+          error={error}
+          generatedImage={generatedImage}
+          modelImageUrl={
+            modelImagesList.length > 0 && modelImagesList[modelsCarousel.index]
+              ? modelImagesList[modelsCarousel.index].imageUrl
+              : null
+          }
+          onClearGeneratedImage={clearGeneratedImage}
+        />
       </div>
 
       <NanoWindow
@@ -361,6 +369,24 @@ function App() {
         onUploadImage={handleOutfitTransfer}
       />
     </div>
+  );
+}
+
+function App() {
+  return (
+    <>
+      <AuthLoading>
+        <div className="sign-in-container">
+          <p>Loading...</p>
+        </div>
+      </AuthLoading>
+      <Unauthenticated>
+        <SignIn />
+      </Unauthenticated>
+      <Authenticated>
+        <AuthenticatedApp />
+      </Authenticated>
+    </>
   );
 }
 

@@ -21,7 +21,7 @@ export function StatusBar({ message, duration = 2000 }: StatusBarProps) {
   if (!displayMessage) return null;
 
   return (
-    <div className="status-bar">
+    <div className="toast">
       {displayMessage}
     </div>
   );
