@@ -10,7 +10,7 @@ import type { Id } from "../convex/_generated/dataModel";
 
 // Import components
 import { MenuBar } from "./components/MenuBar";
-import { UploadSection } from "./components/UploadSection";
+
 import { ClothingCarousel } from "./components/ClothingCarousel";
 import { ModelCarousel } from "./components/ModelCarousel";
 import { ControlButtons } from "./components/ControlButtons";
@@ -42,8 +42,7 @@ function AuthenticatedApp() {
   const { signOut } = useAuthActions();
   const [previewTop, setPreviewTop] = useState<number>(0);
   const [previewBottom, setPreviewBottom] = useState<number>(0);
-  const [isUploading, setIsUploading] = useState<boolean>(false);
-  const [showUploadMenu, setShowUploadMenu] = useState<boolean>(false);
+  const [, setIsUploading] = useState<boolean>(false);
   const [generationProgress, setGenerationProgress] = useState<number>(0);
   const [showNanoWindow, setShowNanoWindow] = useState<boolean>(false);
   const [nanoText, setNanoText] = useState<string>("");
@@ -58,6 +57,7 @@ function AuthenticatedApp() {
   const modelImagesQuery = useQuery(api.modelImages.list);
   const inspoImagesQuery = useQuery(api.inspoImages.list);
   const completedGenerations = useQuery(api.generations.listCompleted);
+  const usage = useQuery(api.usage.getRemaining);
 
   // Seed default clothing items on first sign-in if DB is empty
   useSeedDefaults();
@@ -100,7 +100,6 @@ function AuthenticatedApp() {
 
         if (files && files.length > 0) {
           setIsUploading(true);
-          setShowUploadMenu(false);
 
           try {
             for (let i = 0; i < files.length; i++) {
@@ -164,7 +163,6 @@ function AuthenticatedApp() {
 
       if (files && files.length > 0) {
         setIsUploading(true);
-        setShowUploadMenu(false);
 
         try {
           for (let i = 0; i < files.length; i++) {
@@ -299,14 +297,14 @@ function AuthenticatedApp() {
       <header className="app-header">
         <MenuBar />
         <div className="header-actions">
-          <UploadSection
-            isUploading={isUploading}
-            showUploadMenu={showUploadMenu}
-            onToggleUploadMenu={() => setShowUploadMenu(!showUploadMenu)}
-            onUploadTops={() => handleFileUpload("tops")}
-            onUploadBottoms={() => handleFileUpload("bottoms")}
-            onUploadModels={handleModelUpload}
-          />
+          {usage && (
+            <span
+              className={`usage-indicator${usage.limit - usage.used <= 3 ? " usage-low" : ""}`}
+              title={`${usage.used} of ${usage.limit} daily generations used`}
+            >
+              {usage.used}/{usage.limit}
+            </span>
+          )}
           <button className="sign-out-btn" onClick={() => signOut()}>
             Sign Out
           </button>

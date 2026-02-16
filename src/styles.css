@@ -150,70 +150,6 @@ button {
 }
 
 /* ===== UPLOAD SECTION ===== */
-.upload-trigger {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.upload-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  color: var(--text-secondary);
-  transition: all 0.15s ease;
-}
-
-.upload-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-  box-shadow: var(--shadow-card);
-}
-
-.upload-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 999;
-}
-
-.upload-menu {
-  position: absolute;
-  top: calc(100% + var(--space-xs));
-  right: 0;
-  background: var(--surface-glass);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-elevated);
-  padding: var(--space-xs);
-  z-index: 1000;
-  min-width: 160px;
-  display: flex;
-  flex-direction: column;
-}
-
-.upload-menu-item {
-  padding: var(--space-sm) var(--space-md);
-  border: none;
-  background: none;
-  text-align: left;
-  font-size: 13px;
-  color: var(--text);
-  border-radius: var(--radius-sm);
-  transition: background 0.1s ease;
-}
-
-.upload-menu-item:hover {
-  background: var(--surface-subtle);
-}
-
 /* ===== MODEL CAROUSEL ===== */
 .model-carousel {
   display: flex;
@@ -879,6 +815,19 @@ button {
 .sign-out-btn:hover {
   border-color: var(--accent);
   color: var(--accent);
+}
+
+.usage-indicator {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  opacity: 0.6;
+  font-variant-numeric: tabular-nums;
+}
+
+.usage-indicator.usage-low {
+  color: #e8a735;
+  opacity: 1;
 }
 
 /* ===== INSPO BOARD ===== */

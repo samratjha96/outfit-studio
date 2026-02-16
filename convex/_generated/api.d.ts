@@ -17,6 +17,7 @@ import type * as imageProvider from "../imageProvider.js";
 import type * as inspoImages from "../inspoImages.js";
 import type * as modelImages from "../modelImages.js";
 import type * as seed from "../seed.js";
+import type * as usage from "../usage.js";
 
 import type {
   ApiFromModules,
@@ -34,6 +35,7 @@ declare const fullApi: ApiFromModules<{
   inspoImages: typeof inspoImages;
   modelImages: typeof modelImages;
   seed: typeof seed;
+  usage: typeof usage;
 }>;
 
 /**

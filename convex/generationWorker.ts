@@ -112,6 +112,10 @@ export const run = internalAction({
         model: result.model,
         completedAt: Date.now(),
       });
+
+      await ctx.runMutation(internal.usage.recordUsage, {
+        userId: generation.userId,
+      });
     } catch (error) {
       await ctx.runMutation(internal.generations.updateStatus, {
         id: args.generationId,

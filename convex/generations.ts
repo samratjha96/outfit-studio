@@ -170,6 +170,9 @@ export const startOutfit = action({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
+    const quota = await ctx.runQuery(internal.usage.checkQuota, { userId });
+    if (!quota.allowed) throw new Error("Daily limit reached");
+
     const prompt = buildOutfitCombinePrompt();
 
     const generationId: Id<"generations"> = await ctx.runMutation(
@@ -202,6 +205,9 @@ export const startNano = action({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
+    const quota = await ctx.runQuery(internal.usage.checkQuota, { userId });
+    if (!quota.allowed) throw new Error("Daily limit reached");
+
     const prompt = buildNanoPrompt(args.occasion);
 
     const generationId: Id<"generations"> = await ctx.runMutation(
@@ -231,6 +237,9 @@ export const startTransfer = action({
   handler: async (ctx, args): Promise<Id<"generations">> => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
+
+    const quota = await ctx.runQuery(internal.usage.checkQuota, { userId });
+    if (!quota.allowed) throw new Error("Daily limit reached");
 
     const prompt = buildTransferPrompt();
 

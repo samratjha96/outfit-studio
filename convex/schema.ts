@@ -66,4 +66,10 @@ export default defineSchema({
     .index("by_status", ["status"])
     .index("by_created", ["createdAt"])
     .index("by_user", ["userId", "createdAt"]),
+
+  usageLimits: defineTable({
+    userId: v.id("users"),
+    date: v.string(),
+    count: v.number(),
+  }).index("by_user_date", ["userId", "date"]),
 });
