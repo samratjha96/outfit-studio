@@ -20,6 +20,10 @@ export interface UseOutfitGenerationReturn {
     inspirationFile: File,
     modelImageStorageId?: Id<"_storage">,
   ) => Promise<void>;
+  transferFromStorageId: (
+    inspirationStorageId: Id<"_storage">,
+    modelImageStorageId?: Id<"_storage">,
+  ) => Promise<void>;
   clearGeneratedImage: () => void;
 }
 
@@ -124,6 +128,30 @@ export function useOutfitGeneration(): UseOutfitGenerationReturn {
     [startTransfer, generateUploadUrl],
   );
 
+  const transferFromStorageId = useCallback(
+    async (
+      inspirationStorageId: Id<"_storage">,
+      modelImageStorageId?: Id<"_storage">,
+    ) => {
+      setError(null);
+      setIsStarting(true);
+      try {
+        const id = await startTransfer({
+          inspirationStorageId,
+          modelImageStorageId,
+        });
+        setGenerationId(id);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to start generation",
+        );
+      } finally {
+        setIsStarting(false);
+      }
+    },
+    [startTransfer],
+  );
+
   const clearGeneratedImage = useCallback(() => {
     setGenerationId(null);
     setError(null);
@@ -136,6 +164,7 @@ export function useOutfitGeneration(): UseOutfitGenerationReturn {
     generateOutfit,
     generateNanoOutfit,
     generateOutfitTransfer,
+    transferFromStorageId,
     clearGeneratedImage,
   };
 }

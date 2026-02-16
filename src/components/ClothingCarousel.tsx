@@ -56,6 +56,11 @@ export function ClothingCarousel({
         >
           &#8249;
         </button>
+        {items.length > 0 && (
+          <span className="carousel-count">
+            {carousel.index + 1} / {items.length}
+          </span>
+        )}
         <button
           className="arrow-btn"
           onClick={carousel.next}

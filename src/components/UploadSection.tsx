@@ -27,17 +27,20 @@ export function UploadSection({
       </button>
 
       {showUploadMenu && !isUploading && (
-        <div className="upload-menu">
-          <button className="upload-menu-item" onClick={onUploadTops}>
-            Upload Tops
-          </button>
-          <button className="upload-menu-item" onClick={onUploadBottoms}>
-            Upload Bottoms
-          </button>
-          <button className="upload-menu-item" onClick={onUploadModels}>
-            Upload Models
-          </button>
-        </div>
+        <>
+          <div className="upload-backdrop" onClick={onToggleUploadMenu} />
+          <div className="upload-menu">
+            <button className="upload-menu-item" onClick={onUploadTops}>
+              Upload Tops
+            </button>
+            <button className="upload-menu-item" onClick={onUploadBottoms}>
+              Upload Bottoms
+            </button>
+            <button className="upload-menu-item" onClick={onUploadModels}>
+              Upload Models
+            </button>
+          </div>
+        </>
       )}
     </div>
   );

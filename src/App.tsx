@@ -6,6 +6,7 @@ import { useCarousel } from "./hooks/useCarousel";
 import { useOutfitGeneration } from "./hooks/useOutfitGeneration";
 import { useSeedDefaults } from "./hooks/useSeedDefaults";
 import type { ClothingItem, ModelImage } from "./types";
+import type { Id } from "../convex/_generated/dataModel";
 
 // Import components
 import { MenuBar } from "./components/MenuBar";
@@ -16,6 +17,7 @@ import { ControlButtons } from "./components/ControlButtons";
 import { OutfitPreview } from "./components/OutfitPreview";
 import { NanoWindow } from "./components/NanoWindow";
 import { OutfitTransferWindow } from "./components/OutfitTransferWindow";
+import { InspoBoard } from "./components/InspoBoard";
 
 function SignIn() {
   const { signIn } = useAuthActions();
@@ -54,6 +56,8 @@ function AuthenticatedApp() {
     category: "bottoms",
   });
   const modelImagesQuery = useQuery(api.modelImages.list);
+  const inspoImagesQuery = useQuery(api.inspoImages.list);
+  const completedGenerations = useQuery(api.generations.listCompleted);
 
   // Seed default clothing items on first sign-in if DB is empty
   useSeedDefaults();
@@ -66,6 +70,7 @@ function AuthenticatedApp() {
   const generateUploadUrl = useMutation(api.clothingItems.generateUploadUrl);
   const addClothingItem = useMutation(api.clothingItems.add);
   const generateModelUploadUrl = useMutation(api.modelImages.generateUploadUrl);
+  const deleteGeneration = useMutation(api.generations.remove);
   const addModelImage = useMutation(api.modelImages.add);
 
   const topsCarousel = useCarousel(topsList.length, "tops");
@@ -78,6 +83,7 @@ function AuthenticatedApp() {
     generateOutfit,
     generateNanoOutfit,
     generateOutfitTransfer,
+    transferFromStorageId,
     clearGeneratedImage,
   } = useOutfitGeneration();
 
@@ -339,6 +345,14 @@ function AuthenticatedApp() {
             onNanoBananify={() => setShowNanoWindow(true)}
             onOutfitTransfer={() => setShowOutfitTransferWindow(true)}
           />
+
+          <InspoBoard
+            items={inspoImagesQuery ?? []}
+            onTransfer={(storageId) =>
+              transferFromStorageId(storageId, selectedModelStorageId)
+            }
+            isGenerating={isGenerating}
+          />
         </div>
 
         <OutfitPreview
@@ -352,6 +366,8 @@ function AuthenticatedApp() {
               : null
           }
           onClearGeneratedImage={clearGeneratedImage}
+          history={completedGenerations ?? []}
+          onDeleteGeneration={(id) => deleteGeneration({ id: id as Id<"generations"> })}
         />
       </div>
 

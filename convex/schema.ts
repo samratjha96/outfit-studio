@@ -30,6 +30,14 @@ export default defineSchema({
     .index("by_created", ["createdAt"])
     .index("by_user", ["userId", "createdAt"]),
 
+  inspoImages: defineTable({
+    name: v.string(),
+    storageId: v.id("_storage"),
+    userId: v.id("users"),
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId", "createdAt"]),
+
   generations: defineTable({
     type: v.union(
       v.literal("outfit"),

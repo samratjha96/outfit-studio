@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { action, internalMutation, internalQuery, query } from "./_generated/server";
+import { action, internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
@@ -110,6 +110,52 @@ export const getLatest = query({
         ? await ctx.storage.getUrl(generation.storageId)
         : null,
     };
+  },
+});
+
+// Public: list recent completed generations (for history strip)
+export const listCompleted = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+
+    const items = await ctx.db
+      .query("generations")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .order("desc")
+      .collect();
+
+    const completed = items.filter(
+      (g) => g.status === "completed" && g.storageId,
+    );
+
+    return Promise.all(
+      completed.slice(0, 20).map(async (g) => ({
+        _id: g._id,
+        type: g.type,
+        imageUrl: await ctx.storage.getUrl(g.storageId!),
+        createdAt: g.createdAt,
+      })),
+    );
+  },
+});
+
+// Public: delete a generation
+export const remove = mutation({
+  args: { id: v.id("generations") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const generation = await ctx.db.get(args.id);
+    if (!generation) return;
+    if (generation.userId !== userId) throw new Error("Not authorized");
+
+    if (generation.storageId) {
+      await ctx.storage.delete(generation.storageId);
+    }
+    await ctx.db.delete(args.id);
   },
 });
 

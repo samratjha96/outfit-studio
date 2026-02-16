@@ -14,6 +14,7 @@ import type * as generationWorker from "../generationWorker.js";
 import type * as generations from "../generations.js";
 import type * as http from "../http.js";
 import type * as imageProvider from "../imageProvider.js";
+import type * as inspoImages from "../inspoImages.js";
 import type * as modelImages from "../modelImages.js";
 import type * as seed from "../seed.js";
 
@@ -30,6 +31,7 @@ declare const fullApi: ApiFromModules<{
   generations: typeof generations;
   http: typeof http;
   imageProvider: typeof imageProvider;
+  inspoImages: typeof inspoImages;
   modelImages: typeof modelImages;
   seed: typeof seed;
 }>;
